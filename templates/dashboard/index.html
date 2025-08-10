@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - HelpDesk TI{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4"><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+    
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="stat-card stat-card-primary">
+                <h3 class="counter" data-target="{{ stats.total }}" id="total-tickets">0</h3>
+                <p>Total de Tickets</p>
+                <i class="fas fa-ticket-alt fa-2x opacity-50"></i>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card stat-card-info">
+                <h3 class="counter" data-target="{{ stats.open }}" id="open-tickets">0</h3>
+                <p>Tickets Abertos</p>
+                <i class="fas fa-clock fa-2x opacity-50"></i>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card stat-card-warning">
+                <h3 class="counter" data-target="{{ stats.in_progress }}" id="in-progress-tickets">0</h3>
+                <p>Em Andamento</p>
+                <i class="fas fa-spinner fa-2x opacity-50"></i>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card stat-card-success">
+                <h3 class="counter" data-target="{{ stats.resolved }}" id="resolved-tickets">0</h3>
+                <p>Resolvidos</p>
+                <i class="fas fa-check-circle fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Meus Tickets -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5><i class="fas fa-list"></i> Meus Tickets Recentes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Título</th>
+                                    <th>Prioridade</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ticket in my_tickets %}
+                                <tr class="ticket-item">
+                                    <td>{{ ticket.id }}</td>
+                                    <td>{{ ticket.title[:30] }}...</td>
+                                    <td><span class="priority-label priority-{{ ticket.priority }}">{{ ticket.priority|upper }}</span></td>
+                                    <td><span class="status-label status-{{ ticket.status }}">{{ ticket.status|replace('_', ' ')|upper }}</span></td>
+                                    <td>
+                                        <a href="{{ url_for('view_ticket', ticket_id=ticket.id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Gráfico de Tickets -->
+            <div class="card">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5><i class="fas fa-chart-line"></i> Evolução de Tickets</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="ticketsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Leaderboard -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-gradient-warning text-white">
+                    <h5><i class="fas fa-trophy"></i> Top Usuários</h5>
+                </div>
+                <div class="card-body">
+                    {% for user in top_users %}
+                    <div class="leaderboard-item">
+                        <div class="d-flex align-items-center">
+                            <div class="leaderboard-rank {% if loop.index == 1 %}rank-1{% elif loop.index == 2 %}rank-2{% elif loop.index == 3 %}rank-3{% else %}rank-other{% endif %}">
+                                {{ loop.index }}
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="mb-0">{{ user.full_name }}</h6>
+                                <small class="text-muted">Nível {{ user.level }}</small>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="badge bg-primary">{{ user.points }} pts</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Minhas Conquistas -->
+            <div class="card">
+                <div class="card-header bg-gradient-success text-white">
+                    <h5><i class="fas fa-medal"></i> Últimas Conquistas</h5>
+                </div>
+                <div class="card-body text-center">
+                    {% for badge in current_user.get_badges()[:6] %}
+                    <div class="badge-achievement" title="{{ badge.name }}">
+                        <i class="fas fa-award"></i>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Gráfico de evolução
+document.addEventListener('DOMContentLoaded', function() {
+    createChart('ticketsChart', 'line', {
+        labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+        datasets: [{
+            label: 'Novos Tickets',
+            data: [12, 19, 3, 5, 8, 3, 7],
+            borderColor: 'rgb(102, 126, 234)',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            tension: 0.4
+        }, {
+            label: 'Resolvidos',
+            data: [8, 15, 5, 7, 12, 5, 9],
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+            tension: 0.4
+        }]
+    });
+});
+</script>
+{% endblock %}

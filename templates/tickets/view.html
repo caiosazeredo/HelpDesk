@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Ticket #{{ ticket.id }} - HelpDesk TI{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Detalhes do Ticket -->
+            <div class="card mb-4">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h4>Ticket #{{ ticket.id }} - {{ ticket.title }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <strong>Status:</strong><br>
+                            <span class="status-label status-{{ ticket.status }}">
+                                {{ ticket.status|replace('_', ' ')|upper }}
+                            </span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Prioridade:</strong><br>
+                            <span class="priority-label priority-{{ ticket.priority }}">
+                                {{ ticket.priority|upper }}
+                            </span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Categoria:</strong><br>
+                            <i class="fas {{ category_icons[ticket.category] }}"></i> 
+                            {{ ticket.category|title }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Criado em:</strong><br>
+                            {{ ticket.created_at.strftime('%d/%m/%Y %H:%M') }}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-3">
+                        <strong>Descrição:</strong>
+                        <p class="mt-2">{{ ticket.description }}</p>
+                    </div>
+                    
+                    {% if ticket.status == 'resolved' and ticket.user_id == current_user.id and not ticket.satisfaction_rating %}
+                    <div class="alert alert-warning">
+                        <strong>Avalie o atendimento:</strong>
+                        <div class="mt-2">
+                            {% for i in range(1, 6) %}
+                            <i class="far fa-star rating-star fa-2x" style="cursor: pointer;" onclick="rateTicket({{ ticket.id }}, {{ i }})"></i>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Comentários -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-comments"></i> Comentários</h5>
+                </div>
+                <div class="card-body">
+                    {% for comment in comments %}
+                    <div class="mb-3 p-3 {% if comment.is_internal %}bg-light{% endif %} rounded">
+                        <div class="d-flex justify-content-between">
+                            <strong>{{ comment.author.full_name }}</strong>
+                            <small class="text-muted">
+                                {{ comment.created_at.strftime('%d/%m/%Y %H:%M') }}
+                                {% if comment.is_internal %}
+                                <span class="badge bg-warning">Interno</span>
+                                {% endif %}
+                            </small>
+                        </div>
+                        <p class="mt-2 mb-0">{{ comment.content }}</p>
+                    </div>
+                    {% endfor %}
+                    
+                    <!-- Formulário de Comentário -->
+                    <form method="POST" action="{{ url_for('add_comment', ticket_id=ticket.id) }}">
+                        {{ comment_form.hidden_tag() }}
+                        <div class="mb-3">
+                            {{ comment_form.content(class="form-control", rows="3", placeholder="Adicionar comentário...") }}
+                        </div>
+                        {% if current_user.role in ['technician', 'admin'] %}
+                        <div class="mb-3">
+                            {{ comment_form.is_internal(class="form-select") }}
+                        </div>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Enviar Comentário
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Informações -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> Informações</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Solicitante:</strong> {{ ticket.creator.full_name }}</p>
+                    <p><strong>Departamento:</strong> {{ ticket.creator.department }}</p>
+                    {% if ticket.technician %}
+                    <p><strong>Técnico:</strong> {{ ticket.technician.full_name }}</p>
+                    {% endif %}
+                    {% if ticket.resolved_at %}
+                    <p><strong>Resolvido em:</strong> {{ ticket.resolved_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                    {% endif %}
+                    {% if ticket.resolution_time %}
+                    <p><strong>Tempo de Resolução:</strong> {{ (ticket.resolution_time / 60)|round(1) }} horas</p>
+                    {% endif %}
+                    {% if ticket.satisfaction_rating %}
+                    <p><strong>Avaliação:</strong> 
+                        {% for i in range(ticket.satisfaction_rating) %}
+                        <i class="fas fa-star text-warning"></i>
+                        {% endfor %}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Ações -->
+            {% if current_user.role in ['technician', 'admin'] or ticket.user_id == current_user.id %}
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-cogs"></i> Ações</h5>
+                </div>
+                <div class="card-body">
+                    {% if current_user.role in ['technician', 'admin'] %}
+                        {% if ticket.status == 'open' %}
+                        <button onclick="assignTicket({{ ticket.id }})" class="btn btn-success btn-sm mb-2 w-100">
+                            <i class="fas fa-user-check"></i> Assumir Ticket
+                        </button>
+                        {% endif %}
+                        
+                        {% if ticket.status != 'resolved' %}
+                        <button onclick="updateTicketStatus({{ ticket.id }}, 'in_progress')" class="btn btn-warning btn-sm mb-2 w-100">
+                            <i class="fas fa-spinner"></i> Em Andamento
+                        </button>
+                        <button onclick="updateTicketStatus({{ ticket.id }}, 'resolved')" class="btn btn-success btn-sm mb-2 w-100">
+                            <i class="fas fa-check"></i> Resolver
+                        </button>
+                        {% endif %}
+                    {% endif %}
+                    
+                    {% if ticket.status == 'resolved' and (current_user.id == ticket.user_id or current_user.role in ['technician', 'admin']) %}
+                    <button onclick="updateTicketStatus({{ ticket.id }}, 'closed')" class="btn btn-secondary btn-sm w-100">
+                        <i class="fas fa-times"></i> Fechar Ticket
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

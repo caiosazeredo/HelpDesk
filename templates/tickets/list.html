@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Tickets - HelpDesk TI{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-ticket-alt"></i> Tickets</h1>
+        <a href="{{ url_for('new_ticket') }}" class="btn btn-gradient-primary">
+            <i class="fas fa-plus"></i> Novo Ticket
+        </a>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" placeholder="Buscar tickets..." onkeyup="searchTickets(this.value)">
+                </div>
+                <div class="col-md-6">
+                    <div class="btn-group" role="group">
+                        <a href="?status=all" class="btn btn-outline-primary {% if status_filter == 'all' %}active{% endif %}">Todos</a>
+                        <a href="?status=open" class="btn btn-outline-info {% if status_filter == 'open' %}active{% endif %}">Abertos</a>
+                        <a href="?status=in_progress" class="btn btn-outline-warning {% if status_filter == 'in_progress' %}active{% endif %}">Em Andamento</a>
+                        <a href="?status=resolved" class="btn btn-outline-success {% if status_filter == 'resolved' %}active{% endif %}">Resolvidos</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lista de Tickets -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Título</th>
+                            <th>Categoria</th>
+                            <th>Prioridade</th>
+                            <th>Status</th>
+                            <th>Criado em</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ticket in tickets.items %}
+                        <tr class="ticket-item">
+                            <td>#{{ ticket.id }}</td>
+                            <td>
+                                <strong>{{ ticket.title }}</strong>
+                                <br>
+                                <small class="text-muted">{{ ticket.creator.full_name }}</small>
+                            </td>
+                            <td>
+                                <i class="fas {{ category_icons[ticket.category] }}"></i> 
+                                {{ ticket.category|title }}
+                            </td>
+                            <td>
+                                <span class="priority-label priority-{{ ticket.priority }}">
+                                    {{ ticket.priority|upper }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="status-label status-{{ ticket.status }}">
+                                    {{ ticket.status|replace('_', ' ')|upper }}
+                                </span>
+                            </td>
+                            <td>{{ ticket.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>
+                                <a href="{{ url_for('view_ticket', ticket_id=ticket.id) }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i> Ver
+                                </a>
+                                {% if current_user.role in ['technician', 'admin'] and ticket.status == 'open' %}
+                                <button onclick="assignTicket({{ ticket.id }})" class="btn btn-sm btn-success">
+                                    <i class="fas fa-user-check"></i> Assumir
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginação -->
+            {% if tickets.pages > 1 %}
+            <nav>
+                <ul class="pagination justify-content-center">
+                    {% for page_num in tickets.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != tickets.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_num }}&status={{ status_filter }}">{{ page_num }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

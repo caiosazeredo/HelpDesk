@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Novo Ticket - HelpDesk TI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h4><i class="fas fa-plus-circle"></i> Criar Novo Ticket</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.title.label(class="form-label") }}
+                            {{ form.title(class="form-control", placeholder="Descreva brevemente o problema") }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control", rows="5", placeholder="Forneça detalhes sobre o problema...") }}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.category.label(class="form-label") }}
+                                {{ form.category(class="form-select") }}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.priority.label(class="form-label") }}
+                                {{ form.priority(class="form-select") }}
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> 
+                            <strong>Dica:</strong> Quanto mais detalhes você fornecer, mais rápido conseguiremos resolver seu problema!
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-gradient-primary">
+                                <i class="fas fa-paper-plane"></i> Criar Ticket
+                            </button>
+                            <a href="{{ url_for('tickets_list') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,262 @@
+/* Estilos Personalizados - HelpDesk TI */
+
+:root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --success-gradient: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+    --danger-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    --info-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Navbar com gradiente */
+.bg-gradient-primary {
+    background: var(--primary-gradient);
+}
+
+/* Cards animados */
+.card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Stats Cards com gradientes */
+.stat-card {
+    border-radius: 15px;
+    padding: 20px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: rgba(255, 255, 255, 0.1);
+    transform: rotate(45deg);
+}
+
+.stat-card-primary { background: var(--primary-gradient); }
+.stat-card-success { background: var(--success-gradient); }
+.stat-card-danger { background: var(--danger-gradient); }
+.stat-card-warning { background: var(--warning-gradient); }
+.stat-card-info { background: var(--info-gradient); }
+
+/* Badges de Gamificação */
+.badge-achievement {
+    display: inline-block;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--warning-gradient);
+    color: white;
+    text-align: center;
+    line-height: 60px;
+    font-size: 24px;
+    margin: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Tabelas estilizadas */
+.table-hover tbody tr:hover {
+    background-color: rgba(102, 126, 234, 0.1);
+    cursor: pointer;
+}
+
+/* Botões com gradiente */
+.btn-gradient-primary {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    padding: 10px 30px;
+    transition: all 0.3s ease;
+}
+
+.btn-gradient-primary:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+/* Progress bars animadas */
+.progress {
+    height: 25px;
+    border-radius: 15px;
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    border-radius: 15px;
+    background: var(--primary-gradient);
+    animation: progress-animation 2s ease-in-out;
+}
+
+@keyframes progress-animation {
+    0% { width: 0; }
+}
+
+/* Tickets Priority Labels */
+.priority-label {
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.85rem;
+}
+
+.priority-low { background-color: #d4edda; color: #155724; }
+.priority-medium { background-color: #fff3cd; color: #856404; }
+.priority-high { background-color: #f8d7da; color: #721c24; }
+.priority-critical { background-color: #343a40; color: white; }
+
+/* Status Labels */
+.status-label {
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.85rem;
+}
+
+.status-open { background-color: #cce5ff; color: #004085; }
+.status-in_progress { background-color: #fff3cd; color: #856404; }
+.status-resolved { background-color: #d4edda; color: #155724; }
+.status-closed { background-color: #e2e3e5; color: #383d41; }
+
+/* Leaderboard styling */
+.leaderboard-item {
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 10px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.3s ease;
+}
+
+.leaderboard-item:hover {
+    transform: translateX(10px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.leaderboard-rank {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+}
+
+.rank-1 { background: gold; }
+.rank-2 { background: silver; }
+.rank-3 { background: #cd7f32; }
+.rank-other { background: var(--primary-gradient); }
+
+/* Animação de entrada */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Charts container */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+/* Login page styling */
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-gradient);
+}
+
+.login-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 40px;
+    border-radius: 20px;
+    background: white;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+}
+
+/* Notifications */
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: red;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-gradient);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .stat-card {
+        margin-bottom: 15px;
+    }
+    
+    .leaderboard-item {
+        flex-direction: column;
+        text-align: center;
+    }
+}
