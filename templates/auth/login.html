@@ -16,11 +16,24 @@
             <div class="mb-3">
                 {{ form.username.label(class="form-label") }}
                 {{ form.username(class="form-control", placeholder="Digite seu usuário") }}
+                {% if form.username.errors %}
+                    <div class="text-danger">{{ form.username.errors[0] }}</div>
+                {% endif %}
             </div>
             
             <div class="mb-3">
                 {{ form.password.label(class="form-label") }}
                 {{ form.password(class="form-control", placeholder="Digite sua senha") }}
+                {% if form.password.errors %}
+                    <div class="text-danger">{{ form.password.errors[0] }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                <div class="form-check">
+                    {{ form.remember(class="form-check-input") }}
+                    {{ form.remember.label(class="form-check-label") }}
+                </div>
             </div>
             
             <button type="submit" class="btn btn-gradient-primary w-100 mb-3">
@@ -29,8 +42,45 @@
         </form>
         
         <div class="text-center">
-            <p>Não tem uma conta? <a href="{{ url_for('register') }}">Cadastre-se</a></p>
+            <small class="text-muted">
+                <i class="fas fa-info-circle"></i> 
+                Solicite suas credenciais ao administrador do sistema
+            </small>
         </div>
     </div>
 </div>
+
+<style>
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.login-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 40px;
+    border-radius: 20px;
+    background: white;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+}
+
+.btn-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    padding: 10px 30px;
+    transition: all 0.3s ease;
+}
+
+.btn-gradient-primary:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+</style>
 {% endblock %}

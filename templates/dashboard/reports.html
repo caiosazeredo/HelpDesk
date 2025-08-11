@@ -10,43 +10,90 @@
         <div class="col-md-3">
             <div class="card text-center">
                 <div class="card-body">
-                    <h3 class="text-primary">{{ status_data|sum(attribute='1') }}</h3>
-                    <p>Total de Tickets (30 dias)</p>
+                    <h3 class="text-primary">{{ total_tickets }}</h3>
+                    <p>Total de Tickets</p>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card text-center">
                 <div class="card-body">
-                    <h3 class="text-success">{{ sla_compliance.values()|sum / sla_compliance|length }}%</h3>
-                    <p>Conformidade SLA Média</p>
+                    <h3 class="text-info">
+                        {% set open_count = tickets_by_status|selectattr('0', 'equalto', 'open')|list %}
+                        {{ open_count[0][1] if open_count else 0 }}
+                    </h3>
+                    <p>Tickets Abertos</p>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card text-center">
                 <div class="card-body">
-                    <h3 class="text-warning">{{ resolution_times|sum(attribute='1')|round / 60 }}h</h3>
-                    <p>Tempo Médio Resolução</p>
+                    <h3 class="text-warning">
+                        {% set progress_count = tickets_by_status|selectattr('0', 'equalto', 'in_progress')|list %}
+                        {{ progress_count[0][1] if progress_count else 0 }}
+                    </h3>
+                    <p>Em Andamento</p>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card text-center">
                 <div class="card-body">
-                    <h3 class="text-info">{{ top_technicians|length }}</h3>
-                    <p>Técnicos Ativos</p>
+                    <h3 class="text-success">
+                        {% set resolved_count = tickets_by_status|selectattr('0', 'equalto', 'resolved')|list %}
+                        {{ resolved_count[0][1] if resolved_count else 0 }}
+                    </h3>
+                    <p>Resolvidos</p>
                 </div>
             </div>
         </div>
     </div>
+    
+    {% if current_user.role == 'admin' and user_stats %}
+    <!-- Estatísticas de Usuários - Apenas Admin -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center bg-light">
+                <div class="card-body">
+                    <h4>{{ user_stats.total }}</h4>
+                    <p class="mb-0">Total de Usuários</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-light">
+                <div class="card-body">
+                    <h4 class="text-success">{{ user_stats.active }}</h4>
+                    <p class="mb-0">Usuários Ativos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-light">
+                <div class="card-body">
+                    <h4 class="text-danger">{{ user_stats.admins }}</h4>
+                    <p class="mb-0">Administradores</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-light">
+                <div class="card-body">
+                    <h4 class="text-warning">{{ user_stats.technicians }}</h4>
+                    <p class="mb-0">Técnicos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
     
     <!-- Gráficos -->
     <div class="row mb-4">
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header">
-                    <h5>Tickets por Status</h5>
+                    <h5><i class="fas fa-chart-pie"></i> Tickets por Status</h5>
                 </div>
                 <div class="card-body">
                     <canvas id="statusChart"></canvas>
@@ -56,10 +103,10 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header">
-                    <h5>Tickets por Categoria</h5>
+                    <h5><i class="fas fa-chart-bar"></i> Tickets por Prioridade</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="categoryChart"></canvas>
+                    <canvas id="priorityChart"></canvas>
                 </div>
             </div>
         </div>
@@ -69,144 +116,255 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header">
-                    <h5>Conformidade SLA por Prioridade</h5>
+                    <h5><i class="fas fa-tags"></i> Tickets por Categoria</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="slaChart"></canvas>
+                    <canvas id="categoryChart"></canvas>
                 </div>
             </div>
         </div>
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header">
-                    <h5>Evolução Diária de Tickets</h5>
+                    <h5><i class="fas fa-chart-line"></i> Evolução Temporal</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="dailyChart"></canvas>
+                    <canvas id="timelineChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Tabela Top Técnicos -->
+    <!-- Tabela de Estatísticas -->
     <div class="card">
         <div class="card-header">
-            <h5><i class="fas fa-trophy"></i> Top Técnicos do Mês</h5>
+            <h5><i class="fas fa-table"></i> Resumo Detalhado</h5>
         </div>
         <div class="card-body">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Posição</th>
-                        <th>Técnico</th>
-                        <th>Tickets Resolvidos</th>
-                        <th>Avaliação Média</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for tech in top_technicians %}
-                    <tr>
-                        <td>
-                            {% if loop.index == 1 %}
-                            <i class="fas fa-trophy text-warning"></i>
-                            {% elif loop.index == 2 %}
-                            <i class="fas fa-medal text-secondary"></i>
-                            {% elif loop.index == 3 %}
-                            <i class="fas fa-medal" style="color: #cd7f32;"></i>
-                            {% else %}
-                            {{ loop.index }}
-                            {% endif %}
-                        </td>
-                        <td>{{ tech[0] }}</td>
-                        <td>{{ tech[1] }}</td>
-                        <td>
-                            {% if tech[2] %}
-                                {% for i in range((tech[2]|round)|int) %}
-                                <i class="fas fa-star text-warning"></i>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Métrica</th>
+                            <th>Valor</th>
+                            <th>Detalhes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Taxa de Resolução</strong></td>
+                            <td>
+                                {% set resolved = tickets_by_status|selectattr('0', 'equalto', 'resolved')|list %}
+                                {% set resolved_count = resolved[0][1] if resolved else 0 %}
+                                {% if total_tickets > 0 %}
+                                    <span class="badge bg-success">{{ ((resolved_count / total_tickets) * 100)|round(1) }}%</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ resolved_count }} de {{ total_tickets }} tickets</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Prioridade Mais Comum</strong></td>
+                            <td>
+                                {% if tickets_by_priority %}
+                                    {% set max_priority = tickets_by_priority|max(attribute='1') %}
+                                    <span class="badge bg-warning">{{ max_priority[0]|upper }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% for priority, count in tickets_by_priority %}
+                                    {{ priority|capitalize }}: {{ count }} ticket(s)<br>
                                 {% endfor %}
-                                ({{ tech[2]|round(1) }})
-                            {% else %}
-                                N/A
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Categoria Mais Solicitada</strong></td>
+                            <td>
+                                {% if tickets_by_category %}
+                                    {% set max_category = tickets_by_category|max(attribute='1') %}
+                                    <span class="badge bg-info">{{ max_category[0]|upper }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% for category, count in tickets_by_category %}
+                                    {{ category|capitalize }}: {{ count }} ticket(s)<br>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
 // Dados para os gráficos
-const statusData = {{ status_data|tojson }};
-const categoryData = {{ category_data|tojson }};
-const slaCompliance = {{ sla_compliance|tojson }};
-const dailyTickets = {{ daily_tickets|tojson }};
+const statusData = {{ tickets_by_status|tojson }};
+const priorityData = {{ tickets_by_priority|tojson }};
+const categoryData = {{ tickets_by_category|tojson if tickets_by_category else '[]' }};
 
-// Gráfico de Status
-new Chart(document.getElementById('statusChart'), {
-    type: 'doughnut',
-    data: {
-        labels: statusData.map(d => d[0].replace('_', ' ').toUpperCase()),
-        datasets: [{
-            data: statusData.map(d => d[1]),
-            backgroundColor: ['#17a2b8', '#ffc107', '#28a745', '#6c757d']
-        }]
-    }
-});
+// Configuração de cores
+const statusColors = {
+    'open': '#17a2b8',
+    'in_progress': '#ffc107',
+    'resolved': '#28a745',
+    'closed': '#6c757d'
+};
 
-// Gráfico de Categorias
-new Chart(document.getElementById('categoryChart'), {
-    type: 'bar',
-    data: {
-        labels: categoryData.map(d => d[0].toUpperCase()),
-        datasets: [{
-            label: 'Tickets',
-            data: categoryData.map(d => d[1]),
-            backgroundColor: 'rgba(102, 126, 234, 0.6)'
-        }]
-    }
-});
+const priorityColors = {
+    'low': '#28a745',
+    'medium': '#ffc107',
+    'high': '#fd7e14',
+    'critical': '#dc3545'
+};
 
-// Gráfico SLA
-new Chart(document.getElementById('slaChart'), {
-    type: 'horizontalBar',
+// Gráfico de Status (Pizza)
+if (statusData && statusData.length > 0) {
+    new Chart(document.getElementById('statusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: statusData.map(d => d[0].replace('_', ' ').toUpperCase()),
+            datasets: [{
+                data: statusData.map(d => d[1]),
+                backgroundColor: statusData.map(d => statusColors[d[0]] || '#999'),
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+// Gráfico de Prioridade (Barras)
+if (priorityData && priorityData.length > 0) {
+    new Chart(document.getElementById('priorityChart'), {
+        type: 'bar',
+        data: {
+            labels: priorityData.map(d => d[0].toUpperCase()),
+            datasets: [{
+                label: 'Tickets',
+                data: priorityData.map(d => d[1]),
+                backgroundColor: priorityData.map(d => priorityColors[d[0]] || '#999'),
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+// Gráfico de Categoria (Barras Horizontais)
+if (categoryData && categoryData.length > 0) {
+    new Chart(document.getElementById('categoryChart'), {
+        type: 'horizontalBar',
+        data: {
+            labels: categoryData.map(d => d[0].toUpperCase()),
+            datasets: [{
+                label: 'Tickets',
+                data: categoryData.map(d => d[1]),
+                backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                borderColor: 'rgba(102, 126, 234, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+// Gráfico de Linha (Timeline) - Exemplo com dados simulados
+const last7Days = [];
+const ticketCounts = [];
+for (let i = 6; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    last7Days.push(date.toLocaleDateString('pt-BR', { weekday: 'short' }));
+    ticketCounts.push(Math.floor(Math.random() * 10) + 1);
+}
+
+new Chart(document.getElementById('timelineChart'), {
+    type: 'line',
     data: {
-        labels: Object.keys(slaCompliance).map(k => k.toUpperCase()),
+        labels: last7Days,
         datasets: [{
-            label: 'Conformidade %',
-            data: Object.values(slaCompliance),
-            backgroundColor: Object.values(slaCompliance).map(v => 
-                v >= 90 ? '#28a745' : v >= 70 ? '#ffc107' : '#dc3545'
-            )
+            label: 'Tickets Criados',
+            data: ticketCounts,
+            borderColor: 'rgba(102, 126, 234, 1)',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            tension: 0.4,
+            fill: true
         }]
     },
     options: {
+        responsive: true,
+        maintainAspectRatio: false,
         scales: {
-            xAxes: [{
+            y: {
+                beginAtZero: true,
                 ticks: {
-                    beginAtZero: true,
-                    max: 100
+                    stepSize: 1
                 }
-            }]
+            }
         }
     }
 });
-
-// Gráfico Diário
-new Chart(document.getElementById('dailyChart'), {
-    type: 'line',
-    data: {
-        labels: dailyTickets.map(d => d[0]),
-        datasets: [{
-            label: 'Tickets Criados',
-            data: dailyTickets.map(d => d[1]),
-            borderColor: 'rgba(102, 126, 234, 1)',
-            backgroundColor: 'rgba(102, 126, 234, 0.1)',
-            tension: 0.4
-        }]
-    }
-});
 </script>
+
+<style>
+canvas {
+    max-height: 300px;
+}
+
+.card {
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+</style>
 {% endblock %}

@@ -64,13 +64,13 @@
                     <!-- Gamificação Stats -->
                     <div class="me-3 text-white">
                         <span class="badge bg-warning me-2">
-                            <i class="fas fa-star"></i> Nível {{ current_user.level }}
+                            <i class="fas fa-star"></i> Nível {{ current_user.level or 1 }}
                         </span>
                         <span class="badge bg-info me-2">
-                            <i class="fas fa-coins"></i> {{ current_user.points }} pts
+                            <i class="fas fa-coins"></i> {{ current_user.points or 0 }} pts
                         </span>
                         <span class="badge bg-success">
-                            <i class="fas fa-fire"></i> {{ current_user.streak_days }} dias
+                            <i class="fas fa-fire"></i> {{ current_user.streak_days or 0 }} dias
                         </span>
                     </div>
                     

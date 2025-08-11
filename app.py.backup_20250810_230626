@@ -630,98 +630,34 @@ def add_comment(ticket_id):
     
     return redirect(url_for('view_ticket', ticket_id=ticket_id))
 
-# ==================== ROTAS DE RELATÓRIOS ====================
-
-
-# ==================== ROTAS DE ATUALIZAÇÃO DE TICKETS ====================
-
-@app.route('/tickets/<int:ticket_id>/assign', methods=['POST'])
+@app.route('/tickets/<int:ticket_id>/status/<status>', methods=['POST'])
 @login_required
 @active_required
-def assign_ticket(ticket_id):
-    """Assumir ticket - Técnicos e Admin"""
+def update_ticket_status(ticket_id, status):
+    """Atualizar status do ticket - Apenas admin/técnico"""
     if current_user.role not in ['admin', 'technician']:
         return jsonify({'error': 'Sem permissão'}), 403
     
     ticket = Ticket.query.get_or_404(ticket_id)
-    
-    # Atribui ao usuário atual
-    ticket.assigned_to = current_user.id
-    ticket.status = 'in_progress'
-    ticket.updated_at = datetime.utcnow()
-    
-    # Adiciona comentário automático
-    comment = Comment(
-        content=f'Ticket assumido por {current_user.full_name}',
-        ticket_id=ticket_id,
-        user_id=current_user.id,
-        is_internal=True
-    )
-    db.session.add(comment)
-    
-    # Adiciona pontos
-    current_user.add_points(15)
-    
-    db.session.commit()
-    
-    return jsonify({'success': True, 'message': 'Ticket assumido com sucesso!'})
-
-@app.route('/tickets/<int:ticket_id>/update_status', methods=['POST'])
-@login_required
-@active_required
-def update_ticket_status(ticket_id):
-    """Atualizar status do ticket via AJAX"""
-    if current_user.role not in ['admin', 'technician']:
-        return jsonify({'error': 'Sem permissão'}), 403
-    
-    ticket = Ticket.query.get_or_404(ticket_id)
-    
-    data = request.get_json()
-    new_status = data.get('status')
     
     valid_statuses = ['open', 'in_progress', 'resolved', 'closed']
-    if new_status not in valid_statuses:
+    if status not in valid_statuses:
         return jsonify({'error': 'Status inválido'}), 400
     
     old_status = ticket.status
-    ticket.status = new_status
+    ticket.status = status
     ticket.updated_at = datetime.utcnow()
     
-    # Se resolvido, marca data e calcula tempo
-    if new_status == 'resolved' and old_status != 'resolved':
+    if status == 'resolved' and old_status != 'resolved':
         ticket.resolved_at = datetime.utcnow()
         if ticket.created_at:
             delta = ticket.resolved_at - ticket.created_at
             ticket.resolution_time = int(delta.total_seconds() / 60)
-            
-        # Adiciona pontos para o técnico
-        if ticket.assigned_to == current_user.id:
-            points = 25
-            if ticket.priority == 'critical':
-                points = 50
-            elif ticket.priority == 'high':
-                points = 35
-            current_user.add_points(points)
-    
-    # Adiciona comentário automático
-    status_messages = {
-        'in_progress': 'Status alterado para Em Andamento',
-        'resolved': 'Ticket resolvido',
-        'closed': 'Ticket fechado',
-        'open': 'Ticket reaberto'
-    }
-    
-    comment = Comment(
-        content=f'{status_messages.get(new_status, "Status atualizado")} por {current_user.full_name}',
-        ticket_id=ticket_id,
-        user_id=current_user.id,
-        is_internal=True
-    )
-    db.session.add(comment)
     
     db.session.commit()
     
-    return jsonify({'success': True, 'message': f'Status atualizado para {new_status}!'})
+    flash(f'Status atualizado para {status}!', 'success')
+    return redirect(url_for('view_ticket', ticket_id=ticket_id))
 
 # ==================== ROTAS DE RELATÓRIOS ====================
 
@@ -736,27 +672,15 @@ def reports():
     
     # Estatísticas gerais
     total_tickets = Ticket.query.count()
-    
-    # Tickets por status - Convertendo para lista de tuplas
-    status_query = db.session.query(
+    tickets_by_status = db.session.query(
         Ticket.status, 
         db.func.count(Ticket.id)
     ).group_by(Ticket.status).all()
-    tickets_by_status = [(str(row[0]), int(row[1])) for row in status_query] if status_query else []
     
-    # Tickets por prioridade - Convertendo para lista de tuplas
-    priority_query = db.session.query(
+    tickets_by_priority = db.session.query(
         Ticket.priority,
         db.func.count(Ticket.id)
     ).group_by(Ticket.priority).all()
-    tickets_by_priority = [(str(row[0]), int(row[1])) for row in priority_query] if priority_query else []
-    
-    # Tickets por categoria - Convertendo para lista de tuplas
-    category_query = db.session.query(
-        Ticket.category,
-        db.func.count(Ticket.id)
-    ).group_by(Ticket.category).all()
-    tickets_by_category = [(str(row[0]), int(row[1])) for row in category_query] if category_query else []
     
     # Estatísticas de usuários (apenas admin)
     user_stats = None
@@ -773,7 +697,6 @@ def reports():
                          total_tickets=total_tickets,
                          tickets_by_status=tickets_by_status,
                          tickets_by_priority=tickets_by_priority,
-                         tickets_by_category=tickets_by_category,
                          user_stats=user_stats)
 
 # ==================== TRATAMENTO DE ERROS ====================

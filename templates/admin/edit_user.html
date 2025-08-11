@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Editar Usuário{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="fas fa-user-edit"></i> Editar Usuário: {{ user.username }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Nome de Usuário</label>
+                            <input type="text" class="form-control" value="{{ user.username }}" disabled>
+                            <small class="text-muted">Username não pode ser alterado</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control") }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.full_name.label(class="form-label") }}
+                            {{ form.full_name(class="form-control") }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.department.label(class="form-label") }}
+                            {{ form.department(class="form-control") }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.role.label(class="form-label") }}
+                            {{ form.role(class="form-select") }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.is_active(class="form-check-input") }}
+                                {{ form.is_active.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="mb-3">
+                            <p><strong>Informações:</strong></p>
+                            <ul>
+                                <li>Criado em: {{ user.created_at.strftime('%d/%m/%Y %H:%M') }}</li>
+                                <li>Último login: {{ user.last_login.strftime('%d/%m/%Y %H:%M') if user.last_login else 'Nunca' }}</li>
+                                <li>Total de tickets: {{ user.tickets_count }}</li>
+                                <li>Pontos: {{ user.points }}</li>
+                                <li>Nível: {{ user.level }}</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar Alterações
+                            </button>
+                            <a href="{{ url_for('admin_reset_password', user_id=user.id) }}" class="btn btn-warning">
+                                <i class="fas fa-key"></i> Resetar Senha
+                            </a>
+                            <a href="{{ url_for('admin_users') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
