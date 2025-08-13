@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Relatórios - HelpDesk TI{% endblock %}
+{% block title %}Relatórios e Métricas{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -19,8 +19,11 @@
             <div class="card text-center">
                 <div class="card-body">
                     <h3 class="text-info">
-                        {% set open_count = tickets_by_status|selectattr('0', 'equalto', 'open')|list %}
-                        {{ open_count[0][1] if open_count else 0 }}
+                        {% if tickets_by_status %}
+                            {% for status, count in tickets_by_status %}
+                                {% if status == 'open' or status == 'aberto' %}{{ count }}{% endif %}
+                            {% endfor %}
+                        {% else %}0{% endif %}
                     </h3>
                     <p>Tickets Abertos</p>
                 </div>
@@ -30,8 +33,11 @@
             <div class="card text-center">
                 <div class="card-body">
                     <h3 class="text-warning">
-                        {% set progress_count = tickets_by_status|selectattr('0', 'equalto', 'in_progress')|list %}
-                        {{ progress_count[0][1] if progress_count else 0 }}
+                        {% if tickets_by_status %}
+                            {% for status, count in tickets_by_status %}
+                                {% if status == 'in_progress' or status == 'em_andamento' %}{{ count }}{% endif %}
+                            {% endfor %}
+                        {% else %}0{% endif %}
                     </h3>
                     <p>Em Andamento</p>
                 </div>
@@ -41,8 +47,11 @@
             <div class="card text-center">
                 <div class="card-body">
                     <h3 class="text-success">
-                        {% set resolved_count = tickets_by_status|selectattr('0', 'equalto', 'resolved')|list %}
-                        {{ resolved_count[0][1] if resolved_count else 0 }}
+                        {% if tickets_by_status %}
+                            {% for status, count in tickets_by_status %}
+                                {% if status == 'resolved' or status == 'resolvido' %}{{ count }}{% endif %}
+                            {% endfor %}
+                        {% else %}0{% endif %}
                     </h3>
                     <p>Resolvidos</p>
                 </div>
@@ -51,7 +60,6 @@
     </div>
     
     {% if current_user.role == 'admin' and user_stats %}
-    <!-- Estatísticas de Usuários - Apenas Admin -->
     <div class="row mb-4">
         <div class="col-md-3">
             <div class="card text-center bg-light">
@@ -96,7 +104,7 @@
                     <h5><i class="fas fa-chart-pie"></i> Tickets por Status</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="statusChart"></canvas>
+                    <canvas id="statusChart" width="400" height="300"></canvas>
                 </div>
             </div>
         </div>
@@ -106,7 +114,7 @@
                     <h5><i class="fas fa-chart-bar"></i> Tickets por Prioridade</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="priorityChart"></canvas>
+                    <canvas id="priorityChart" width="400" height="300"></canvas>
                 </div>
             </div>
         </div>
@@ -119,7 +127,7 @@
                     <h5><i class="fas fa-tags"></i> Tickets por Categoria</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="categoryChart"></canvas>
+                    <canvas id="categoryChart" width="400" height="300"></canvas>
                 </div>
             </div>
         </div>
@@ -129,13 +137,13 @@
                     <h5><i class="fas fa-chart-line"></i> Evolução Temporal</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="timelineChart"></canvas>
+                    <canvas id="timelineChart" width="400" height="300"></canvas>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Tabela de Estatísticas -->
+    <!-- Tabela Resumo -->
     <div class="card">
         <div class="card-header">
             <h5><i class="fas fa-table"></i> Resumo Detalhado</h5>
@@ -154,47 +162,21 @@
                         <tr>
                             <td><strong>Taxa de Resolução</strong></td>
                             <td>
-                                {% set resolved = tickets_by_status|selectattr('0', 'equalto', 'resolved')|list %}
-                                {% set resolved_count = resolved[0][1] if resolved else 0 %}
                                 {% if total_tickets > 0 %}
+                                    {% set resolved_count = 0 %}
+                                    {% if tickets_by_status %}
+                                        {% for status, count in tickets_by_status %}
+                                            {% if status == 'resolved' or status == 'resolvido' %}
+                                                {% set resolved_count = count %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
                                     <span class="badge bg-success">{{ ((resolved_count / total_tickets) * 100)|round(1) }}%</span>
                                 {% else %}
                                     <span class="badge bg-secondary">N/A</span>
                                 {% endif %}
                             </td>
-                            <td>{{ resolved_count }} de {{ total_tickets }} tickets</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Prioridade Mais Comum</strong></td>
-                            <td>
-                                {% if tickets_by_priority %}
-                                    {% set max_priority = tickets_by_priority|max(attribute='1') %}
-                                    <span class="badge bg-warning">{{ max_priority[0]|upper }}</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">N/A</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% for priority, count in tickets_by_priority %}
-                                    {{ priority|capitalize }}: {{ count }} ticket(s)<br>
-                                {% endfor %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>Categoria Mais Solicitada</strong></td>
-                            <td>
-                                {% if tickets_by_category %}
-                                    {% set max_category = tickets_by_category|max(attribute='1') %}
-                                    <span class="badge bg-info">{{ max_category[0]|upper }}</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">N/A</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% for category, count in tickets_by_category %}
-                                    {{ category|capitalize }}: {{ count }} ticket(s)<br>
-                                {% endfor %}
-                            </td>
+                            <td>{{ resolved_count|default(0) }} de {{ total_tickets }} tickets</td>
                         </tr>
                     </tbody>
                 </table>
@@ -202,169 +184,172 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Dados para os gráficos
-const statusData = {{ tickets_by_status|tojson }};
-const priorityData = {{ tickets_by_priority|tojson }};
-const categoryData = {{ tickets_by_category|tojson if tickets_by_category else '[]' }};
-
-// Configuração de cores
-const statusColors = {
-    'open': '#17a2b8',
-    'in_progress': '#ffc107',
-    'resolved': '#28a745',
-    'closed': '#6c757d'
-};
-
-const priorityColors = {
-    'low': '#28a745',
-    'medium': '#ffc107',
-    'high': '#fd7e14',
-    'critical': '#dc3545'
-};
-
-// Gráfico de Status (Pizza)
-if (statusData && statusData.length > 0) {
-    new Chart(document.getElementById('statusChart'), {
-        type: 'doughnut',
-        data: {
-            labels: statusData.map(d => d[0].replace('_', ' ').toUpperCase()),
-            datasets: [{
-                data: statusData.map(d => d[1]),
-                backgroundColor: statusData.map(d => statusColors[d[0]] || '#999'),
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
+// Aguarda o DOM carregar
+document.addEventListener('DOMContentLoaded', function() {
+    // Dados do backend
+    const statusData = {{ tickets_by_status|default([])|tojson|safe }};
+    const priorityData = {{ tickets_by_priority|default([])|tojson|safe }};
+    const categoryData = {{ tickets_by_category|default([])|tojson|safe }};
+    
+    console.log('Status Data:', statusData);
+    console.log('Priority Data:', priorityData);
+    console.log('Category Data:', categoryData);
+    
+    // Gráfico de Status
+    if (statusData && statusData.length > 0) {
+        const statusCtx = document.getElementById('statusChart');
+        if (statusCtx) {
+            new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: statusData.map(item => {
+                        const status = item[0];
+                        const labels = {
+                            'open': 'Aberto',
+                            'aberto': 'Aberto',
+                            'in_progress': 'Em Andamento',
+                            'em_andamento': 'Em Andamento',
+                            'resolved': 'Resolvido',
+                            'resolvido': 'Resolvido',
+                            'closed': 'Fechado',
+                            'fechado': 'Fechado'
+                        };
+                        return labels[status] || status;
+                    }),
+                    datasets: [{
+                        data: statusData.map(item => item[1]),
+                        backgroundColor: [
+                            '#17a2b8', // Aberto - Azul
+                            '#ffc107', // Em Andamento - Amarelo
+                            '#28a745', // Resolvido - Verde
+                            '#6c757d'  // Fechado - Cinza
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
                 }
-            }
+            });
         }
-    });
-}
-
-// Gráfico de Prioridade (Barras)
-if (priorityData && priorityData.length > 0) {
-    new Chart(document.getElementById('priorityChart'), {
-        type: 'bar',
-        data: {
-            labels: priorityData.map(d => d[0].toUpperCase()),
-            datasets: [{
-                label: 'Tickets',
-                data: priorityData.map(d => d[1]),
-                backgroundColor: priorityData.map(d => priorityColors[d[0]] || '#999'),
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
+    }
+    
+    // Gráfico de Prioridade
+    if (priorityData && priorityData.length > 0) {
+        const priorityCtx = document.getElementById('priorityChart');
+        if (priorityCtx) {
+            new Chart(priorityCtx, {
+                type: 'bar',
+                data: {
+                    labels: priorityData.map(item => {
+                        const priority = item[0];
+                        const labels = {
+                            'low': 'Baixa',
+                            'baixa': 'Baixa',
+                            'medium': 'Média',
+                            'media': 'Média',
+                            'high': 'Alta',
+                            'alta': 'Alta',
+                            'critical': 'Crítica',
+                            'critica': 'Crítica'
+                        };
+                        return labels[priority] || priority;
+                    }),
+                    datasets: [{
+                        label: 'Quantidade',
+                        data: priorityData.map(item => item[1]),
+                        backgroundColor: [
+                            '#28a745', // Baixa - Verde
+                            '#ffc107', // Média - Amarelo
+                            '#fd7e14', // Alta - Laranja
+                            '#dc3545'  // Crítica - Vermelho
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
                     }
                 }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                }
-            }
+            });
         }
-    });
-}
-
-// Gráfico de Categoria (Barras Horizontais)
-if (categoryData && categoryData.length > 0) {
-    new Chart(document.getElementById('categoryChart'), {
-        type: 'horizontalBar',
-        data: {
-            labels: categoryData.map(d => d[0].toUpperCase()),
-            datasets: [{
-                label: 'Tickets',
-                data: categoryData.map(d => d[1]),
-                backgroundColor: 'rgba(102, 126, 234, 0.6)',
-                borderColor: 'rgba(102, 126, 234, 1)',
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
+    }
+    
+    // Gráfico de Categoria
+    if (categoryData && categoryData.length > 0) {
+        const categoryCtx = document.getElementById('categoryChart');
+        if (categoryCtx) {
+            new Chart(categoryCtx, {
+                type: 'bar',
+                data: {
+                    labels: categoryData.map(item => item[0]),
+                    datasets: [{
+                        label: 'Quantidade',
+                        data: categoryData.map(item => item[1]),
+                        backgroundColor: '#667eea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
                     }
                 }
+            });
+        }
+    }
+    
+    // Gráfico de Timeline (dados simulados)
+    const timelineCtx = document.getElementById('timelineChart');
+    if (timelineCtx) {
+        const days = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+        const data = [2, 4, 3, 5, 7, 4, 6];
+        
+        new Chart(timelineCtx, {
+            type: 'line',
+            data: {
+                labels: days,
+                datasets: [{
+                    label: 'Tickets Criados',
+                    data: data,
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    tension: 0.4
+                }]
             },
-            plugins: {
-                legend: {
-                    display: false
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
                 }
             }
-        }
-    });
-}
-
-// Gráfico de Linha (Timeline) - Exemplo com dados simulados
-const last7Days = [];
-const ticketCounts = [];
-for (let i = 6; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    last7Days.push(date.toLocaleDateString('pt-BR', { weekday: 'short' }));
-    ticketCounts.push(Math.floor(Math.random() * 10) + 1);
-}
-
-new Chart(document.getElementById('timelineChart'), {
-    type: 'line',
-    data: {
-        labels: last7Days,
-        datasets: [{
-            label: 'Tickets Criados',
-            data: ticketCounts,
-            borderColor: 'rgba(102, 126, 234, 1)',
-            backgroundColor: 'rgba(102, 126, 234, 0.1)',
-            tension: 0.4,
-            fill: true
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    stepSize: 1
-                }
-            }
-        }
+        });
     }
 });
 </script>
-
-<style>
-canvas {
-    max-height: 300px;
-}
-
-.card {
-    margin-bottom: 20px;
-}
-
-.card-header {
-    background-color: #f8f9fa;
-    font-weight: bold;
-}
-</style>
 {% endblock %}

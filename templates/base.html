@@ -62,6 +62,7 @@
                 
                 <div class="d-flex align-items-center">
                     <!-- Gamificação Stats -->
+                    {% if current_user.role in ['admin', 'technician'] %}
                     <div class="me-3 text-white">
                         <span class="badge bg-warning me-2">
                             <i class="fas fa-star"></i> Nível {{ current_user.level or 1 }}
@@ -73,6 +74,7 @@
                             <i class="fas fa-fire"></i> {{ current_user.streak_days or 0 }} dias
                         </span>
                     </div>
+                    {% endif %}
                     
                     <!-- User Menu -->
                     <div class="dropdown">
