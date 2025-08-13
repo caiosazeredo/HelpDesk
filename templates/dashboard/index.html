@@ -185,16 +185,19 @@
                         {% endif %}
                     </p>
                     <hr>
+                    {% if current_user.role in ['admin', 'technician'] %}
                     <p><strong>Pontos:</strong> {{ current_user.points }}</p>
                     <p><strong>Nível:</strong> {{ current_user.level }}</p>
+                    {% endif %}
                     <p><strong>Tickets Criados:</strong> {{ current_user.tickets_count }}</p>
                 </div>
             </div>
             
-            <!-- Top Usuários -->
+            <!-- Top Usuários - Apenas para técnicos e admin -->
+            {% if current_user.role in ['admin', 'technician'] %}
             <div class="card">
                 <div class="card-header">
-                    <h5><i class="fas fa-trophy"></i> Top Usuários</h5>
+                    <h5><i class="fas fa-trophy"></i> Top Técnicos</h5>
                 </div>
                 <div class="card-body">
                     {% for user in top_users %}
@@ -210,6 +213,7 @@
                     {% endfor %}
                 </div>
             </div>
+            {% endif %}
         </div>
     </div>
 </div>

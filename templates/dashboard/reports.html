@@ -144,7 +144,7 @@
     </div>
     
     <!-- Tabela Resumo -->
-    <div class="card">
+    <!-- <div class="card">
         <div class="card-header">
             <h5><i class="fas fa-table"></i> Resumo Detalhado</h5>
         </div>
@@ -166,8 +166,15 @@
                                     {% set resolved_count = 0 %}
                                     {% if tickets_by_status %}
                                         {% for status, count in tickets_by_status %}
-                                            {% if status == 'resolved' or status == 'resolvido' %}
-                                                {% set resolved_count = count %}
+                                            {% if status == 'resolved' %}
+                                                {% set resolved_count = resolved_count + count %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                    {% if tickets_by_status %}
+                                        {% for status, count in tickets_by_status %}
+                                            {% if status == 'closed' %}
+                                                {% set resolved_count = resolved_count + count %}
                                             {% endif %}
                                         {% endfor %}
                                     {% endif %}
@@ -176,7 +183,7 @@
                                     <span class="badge bg-secondary">N/A</span>
                                 {% endif %}
                             </td>
-                            <td>{{ resolved_count|default(0) }} de {{ total_tickets }} tickets</td>
+                            <td>{% set resolved_total = 0 %}{% for status, count in tickets_by_status %}{% if status in ["resolved", "closed"] %}{% set resolved_total = resolved_total + count %}{% endif %}{% endfor %}{{ resolved_total }} de {{ total_tickets }} tickets</td>
                         </tr>
                     </tbody>
                 </table>
@@ -184,7 +191,7 @@
         </div>
     </div>
 </div>
-{% endblock %}
+{% endblock %} -->
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

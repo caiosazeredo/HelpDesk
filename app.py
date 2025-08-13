@@ -308,7 +308,9 @@ def login():
             
             login_user(user, remember=form.remember.data)
             user.last_login = datetime.utcnow()
-            user.add_points(5)  # Pontos por login
+            # Pontos apenas para técnicos/admin
+            if user.role in ['admin', 'technician']:
+                user.add_points(5)  # Pontos por login
             db.session.commit()
             
             flash(f'Bem-vindo, {user.full_name}!', 'success')
@@ -367,8 +369,11 @@ def dashboard():
         'active_users': active_users
     }
     
-    # Top usuários (gamificação)
-    top_users = User.query.filter_by(is_active=True).order_by(User.points.desc()).limit(5).all()
+    # Top técnicos/admin (gamificação - apenas quem resolve tickets)
+    top_users = User.query.filter(
+        User.is_active == True,
+        User.role.in_(['admin', 'technician'])
+    ).order_by(User.points.desc()).limit(5).all()
     
     return render_template('dashboard/index.html',
                          stats=stats,
@@ -569,7 +574,7 @@ def new_ticket():
         db.session.add(ticket)
         db.session.commit()
         
-        current_user.add_points(10)  # Pontos por criar ticket
+        # Sem pontos para criar ticket (apenas resolver)
         flash('Ticket criado com sucesso!', 'success')
         return redirect(url_for('view_ticket', ticket_id=ticket.id))
     
@@ -625,7 +630,9 @@ def add_comment(ticket_id):
         ticket.updated_at = datetime.utcnow()
         db.session.commit()
         
-        current_user.add_points(5)  # Pontos por comentar
+        # Pontos apenas para técnicos/admin ao comentar
+        if current_user.role in ['admin', 'technician']:
+            current_user.add_points(5)  # Pontos por comentar
         flash('Comentário adicionado!', 'success')
     
     return redirect(url_for('view_ticket', ticket_id=ticket_id))
@@ -742,7 +749,16 @@ def reports():
         Ticket.status, 
         db.func.count(Ticket.id)
     ).group_by(Ticket.status).all()
-    tickets_by_status = [(str(row[0]), int(row[1])) for row in status_query] if status_query else []
+    
+    # Agrupa resolved e closed como resolvidos
+    status_dict = {}
+    for status, count in status_query:
+        if status in ['resolved', 'closed']:
+            status_dict['resolved'] = status_dict.get('resolved', 0) + count
+        else:
+            status_dict[status] = count
+    
+    tickets_by_status = [(str(k), int(v)) for k, v in status_dict.items()]
     
     # Tickets por prioridade - Convertendo para lista de tuplas
     priority_query = db.session.query(
